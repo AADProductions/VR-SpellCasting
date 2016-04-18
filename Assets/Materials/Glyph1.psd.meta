@@ -1,14 +1,13 @@
 fileFormatVersion: 2
-guid: 4d882636fe74b924a9e18af4ec561cb6
-timeCreated: 1460747969
+guid: 123821a4880f03e4faa3c8eb2dcdd699
+timeCreated: 1460939556
 licenseType: Pro
 TextureImporter:
-  fileIDToRecycleName:
-    21300000: BrushTexture1
+  fileIDToRecycleName: {}
   serializedVersion: 2
   mipmaps:
     mipMapMode: 0
-    enableMipMap: 0
+    enableMipMap: 1
     linearTexture: 0
     correctGamma: 0
     fadeOut: 0
@@ -20,7 +19,7 @@ TextureImporter:
     externalNormalMap: 0
     heightScale: 0.25
     normalMapFilter: 0
-  isReadable: 0
+  isReadable: 1
   grayScaleToAlpha: 0
   generateCubemap: 0
   cubemapConvolution: 0
@@ -31,47 +30,27 @@ TextureImporter:
   maxTextureSize: 2048
   textureSettings:
     filterMode: -1
-    aniso: 16
+    aniso: -1
     mipBias: -1
-    wrapMode: 1
-  nPOTScale: 0
+    wrapMode: -1
+  nPOTScale: 1
   lightmap: 0
   rGBM: 0
   compressionQuality: 50
   allowsAlphaSplitting: 0
-  spriteMode: 1
+  spriteMode: 0
   spriteExtrude: 1
   spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spritePixelsToUnits: 100
-  alphaIsTransparency: 1
+  alphaIsTransparency: 0
   spriteTessellationDetail: -1
-  textureType: 8
+  textureType: 5
   buildTargetSettings: []
   spriteSheet:
-    sprites:
-    - name: BrushTexture1
-      rect:
-        serializedVersion: 2
-        x: 0
-        y: 767
-        width: 256
-        height: 256
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline:
-      - - {x: -36, y: 67}
-        - {x: -66, y: 28}
-        - {x: -66, y: -60}
-        - {x: -54, y: -65}
-        - {x: 60, y: -65}
-        - {x: 66, y: -46}
-        - {x: 66, y: 52}
-        - {x: 39, y: 67}
-      tessellationDetail: 0
+    sprites: []
     outline: []
   spritePackingTag: 
   userData: 

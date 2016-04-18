@@ -4,6 +4,7 @@ using NewtonVR;
 
 public class SpellCaster : MonoBehaviour {
 	public bool Drawing = false;
+	public float CanvasSpawnDistance = 0.5f;
 	public LayerMask CanvasLayer;
 	public Vector2 CurrentUVs;
 	public NVRHand LeftHand;
@@ -11,28 +12,38 @@ public class SpellCaster : MonoBehaviour {
 	public CasterMode Mode = CasterMode.Dormant;
 	public Transform CanvasTr;
 	public Transform CameraRig;
-	Vector3 canvasDirection;
+	public AnimationCurve ScaleUpCurve;
+	public AnimationCurve ScaleDownCurve;
 	RaycastHit hitInfo;
+	float growStartTime;
+	float shrinkStartTime;
 
 	public void Update () {
 
-		CanvasTr.position = CameraRig.position;
+		//CanvasTr.position = CameraRig.position;
 
 		switch (Mode) {
 		case CasterMode.Dormant:
 		default:
 			Drawing = false;
-			CanvasTr.gameObject.SetActive (false);
+			if (Time.time < shrinkStartTime + 3f) {
+				CanvasTr.localScale = Vector3.one * ScaleDownCurve.Evaluate (Time.time - shrinkStartTime);
+			} else {
+				CanvasTr.gameObject.SetActive (false);
+			}
 			if (LeftHand.HoldButtonDown) {
 				CanvasTr.gameObject.SetActive (true);
+				CanvasTr.localScale = Vector3.one * 0.0001f;
+				CanvasTr.position = CameraRig.position + CameraRig.forward * CanvasSpawnDistance;
+				CanvasTr.forward = CameraRig.forward;
+				growStartTime = Time.time;
 				Mode = CasterMode.Drawing;
 			}
 			break;
 
 		case CasterMode.Drawing:
+			CanvasTr.localScale = Vector3.one * ScaleUpCurve.Evaluate (Time.time - growStartTime);
 			Drawing = false;
-			canvasDirection = (LeftHand.transform.position - CameraRig.position).normalized;
-			CanvasTr.forward = canvasDirection;
 			if (Physics.Raycast (
 				RightHand.transform.position,
 				RightHand.transform.forward,
@@ -47,13 +58,14 @@ public class SpellCaster : MonoBehaviour {
 				}
 			}
 			if (LeftHand.HoldButtonUp) {
+				shrinkStartTime = Time.time;
 				Mode = CasterMode.Casting;
 			}
 			break;
 
 		case CasterMode.Casting:
 			Drawing = false;
-			CanvasTr.gameObject.SetActive (false);
+			//CanvasTr.gameObject.SetActive (false);
 			Mode = CasterMode.Cooldown;
 			break;
 
