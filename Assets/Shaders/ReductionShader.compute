@@ -1,0 +1,46 @@
+﻿#pragma kernel CSMain
+#define TGSize_ 32
+
+struct result
+{
+	float data;
+};
+
+Texture2D<float> InputTexture : register(t0);
+RWTexture2D<float> OutputTexture : register(u0);
+static const uint TotalNumThreads = TGSize_ * TGSize_;
+groupshared float4 SharedMem[TotalNumThreads];
+RWStructuredBuffer<result> ReductionBuffer;
+
+[numthreads(TGSize_, TGSize_, 1)]
+void CSMain (uint3 GroupID : SV_GroupID, uint3 GroupThreadID : SV_GroupThreadID)
+{
+	const uint ThreadIdx = GroupThreadID.y * TGSize_ + GroupThreadID.x;
+
+	const uint2 SampleIdx = (GroupID.xy * TGSize_ + GroupThreadID.xy) * 2;
+	float4 sample = 0.0f;
+	sample.x = InputTexture[SampleIdx + uint2(0, 0)];
+	sample.y = InputTexture[SampleIdx + uint2(1, 0)];
+	sample.z = InputTexture[SampleIdx + uint2(0, 1)];
+	sample.w = InputTexture[SampleIdx + uint2(1, 1)];
+
+	// Store in shared memory
+	SharedMem[ThreadIdx] = sample;
+	GroupMemoryBarrierWithGroupSync();
+
+	// Parallel reduction
+	[unroll(TotalNumThreads)]
+	for(uint s = TotalNumThreads / 2; s > 0; s >>= 1)
+	{
+		if(ThreadIdx < s)
+			SharedMem[ThreadIdx] += SharedMem[ThreadIdx + s];
+
+		GroupMemoryBarrierWithGroupSync();
+	}
+
+	// Have the first thread write out to the output texture
+	if(ThreadIdx == 0) {
+		float r = dot(SharedMem[0], 0.25f) / TotalNumThreads;
+		OutputTexture[GroupID.xy] = r;
+	}
+}

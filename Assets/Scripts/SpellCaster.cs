@@ -12,15 +12,31 @@ public class SpellCaster : MonoBehaviour {
 	public CasterMode Mode = CasterMode.Dormant;
 	public Transform CanvasTr;
 	public Transform CameraRig;
+	public Transform FingerTipPosTr;
 	public AnimationCurve ScaleUpCurve;
 	public AnimationCurve ScaleDownCurve;
 	RaycastHit hitInfo;
 	float growStartTime;
 	float shrinkStartTime;
+	Collider fingerCollider;
+
+	void OnTriggerEnter (Collider other) {
+		Debug.Log ("Entered trigger: " + other.name);
+		if (other.CompareTag ("Fingertip")) {
+			fingerCollider = other;
+			Drawing = true;
+		}
+	}
+
+	void OnTriggerExit (Collider other) {
+		Debug.Log ("Exited trigger: " + other.name);
+		if (other.CompareTag ("Fingertip")) {
+			fingerCollider = null;
+			Drawing = false;
+		}
+	}
 
 	public void Update () {
-
-		//CanvasTr.position = CameraRig.position;
 
 		switch (Mode) {
 		case CasterMode.Dormant:
@@ -43,8 +59,12 @@ public class SpellCaster : MonoBehaviour {
 
 		case CasterMode.Drawing:
 			CanvasTr.localScale = Vector3.one * ScaleUpCurve.Evaluate (Time.time - growStartTime);
-			Drawing = false;
-			if (Physics.Raycast (
+			if (Drawing) {
+				FingerTipPosTr.position = fingerCollider.transform.position;
+				CurrentUVs.x = FingerTipPosTr.localPosition.x;
+				CurrentUVs.y = FingerTipPosTr.localPosition.y;
+			}
+			/*if (Physics.Raycast (
 				RightHand.transform.position,
 				RightHand.transform.forward,
 				out hitInfo,
@@ -52,11 +72,7 @@ public class SpellCaster : MonoBehaviour {
 				CanvasLayer,
 				QueryTriggerInteraction.Ignore)) {
 				CurrentUVs = hitInfo.textureCoord;
-
-				if (RightHand.HoldButtonPressed) {				
-					Drawing = true;	
-				}
-			}
+			}*/
 			if (LeftHand.HoldButtonUp) {
 				shrinkStartTime = Time.time;
 				Mode = CasterMode.Casting;

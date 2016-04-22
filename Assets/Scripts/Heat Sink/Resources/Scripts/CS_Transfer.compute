@@ -1,0 +1,33 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+struct stuff
+{
+float data;
+};
+
+StructuredBuffer<stuff> Prev;
+RWStructuredBuffer<stuff> Result;
+float4 g_params;
+
+[numthreads(1,1,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+	float origVal = Prev[id.y * 256 + id.x].data;
+	
+	if (id.y == 0 || id.x == 0 || id.y == 255 || id.x == 255) {
+		Result[id.y * 256 + id.x].data = origVal;
+	} else {	
+		float vVal = -2.0 * origVal;
+					
+		float uxx = vVal + Prev[id.y * 256 + id.x - 1].data + Prev[id.y * 256 + id.x + 1].data;
+		float uyy = vVal + Prev[(id.y - 1) * 256 + id.x].data + Prev[(id.y + 1) * 256 + id.x].data;
+					
+		float temp = 1.0 / g_params.x;
+		temp *= temp;
+					
+		float val = origVal + g_params.y * g_params.z * (uxx + uyy) * temp;
+		
+	    Result[id.y * 256 + id.x].data = val;
+	}
+}

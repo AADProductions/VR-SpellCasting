@@ -3,55 +3,84 @@ using System.Collections;
 
 public class GlyphAnalyzer : MonoBehaviour {
 
-	public Texture2D GlyphTemplate;
-	public Texture2D GlyphAttempt;
-	public Color result;
-	public float combinedResult;
-	Color32 [] templateColors;
-	Color32 [] attemptColors;
-	Color32 [] blendedResult;
-
-	public void Start () {
-		StartCoroutine (CheckResult ());
-
-		templateColors = GlyphTemplate.GetPixels32 ();
-		attemptColors = GlyphAttempt.GetPixels32 ();
-		blendedResult = new Color32 [templateColors.Length];
+	public struct result {
+		public float data;
 	}
 
-	public IEnumerator CheckResult ( ) {
+	public float Average;
+	public ComputeShader CompareShader;
+	public ComputeShader ReduceShader;
+	public RenderTexture CompareResult;
+	public RenderTexture ReduceResultPass1;
+	public RenderTexture ReduceResultPass2;
+	public Texture2D GlyphTemplate;
+	public Texture2D GlyphAttempt;
 
-		yield return new WaitForSeconds (3f);
+	void Start ( ) {
+		StartCoroutine (CompareGlyph ());
+	}
 
-		Color32 template = Color.black;
-		Color32 attempt = Color.black;
-		Color32 difference = Color.black;
+	IEnumerator CompareGlyph () {
 
-		for (int i = 0; i < templateColors.Length; i++) {
-			template = templateColors [i];
-			attempt = attemptColors [i];
-			difference.r = (byte)Mathf.Abs ((int)template.r - (int)attempt.r);
-			difference.g = (byte)Mathf.Abs ((int)template.g - (int)attempt.g);
-			difference.b = (byte)Mathf.Abs ((int)template.b - (int)attempt.b);
-			blendedResult [i] = difference;
+		yield return new WaitForSeconds (5f);
+
+		CompareResult = new RenderTexture(GlyphAttempt.width, GlyphAttempt.height, 0, RenderTextureFormat.RFloat);
+		CompareResult.enableRandomWrite = true;
+		CompareResult.antiAliasing = 2;
+		CompareResult.filterMode = FilterMode.Trilinear;
+		CompareResult.Create();
+
+		CompareShader.SetTexture (0, "Attempt", GlyphAttempt);
+		CompareShader.SetTexture (0, "Template", GlyphTemplate);
+		CompareShader.SetTexture (0, "Result", CompareResult);
+		CompareShader.Dispatch (0, CompareResult.width / 8, CompareResult.width / 8, 1);
+
+		yield return null;
+
+		ReduceResultPass1 = new RenderTexture (16, 16, 0, RenderTextureFormat.RFloat);
+		ReduceResultPass1.enableRandomWrite = true;
+		ReduceResultPass1.antiAliasing = 1;
+		ReduceResultPass1.filterMode = FilterMode.Point;
+		ReduceResultPass1.Create();
+
+		ReduceShader.SetTexture (0, "InputTexture", CompareResult);
+		ReduceShader.SetTexture (0, "OutputTexture", ReduceResultPass1);
+		ReduceShader.Dispatch (0, 32, 32, 1);
+
+		yield return null;
+
+		ReduceResultPass2 = new RenderTexture (1, 1, 0, RenderTextureFormat.RFloat);
+		ReduceResultPass2.enableRandomWrite = true;
+		ReduceResultPass2.antiAliasing = 1;
+		ReduceResultPass2.filterMode = FilterMode.Point;
+		ReduceResultPass2.Create();
+
+		ReduceShader.SetTexture (0, "InputTexture", ReduceResultPass1);
+		ReduceShader.SetTexture (0, "OutputTexture", ReduceResultPass2);
+		ReduceShader.Dispatch (0, 32, 32, 1);
+
+		yield return null;
+	}
+
+	void OnGUI()
+	{
+		int s = 256;
+		if (ReduceResultPass1 != null) {
+			GUI.DrawTexture (new Rect (0, 0, s, s), CompareResult);
+			GUI.DrawTexture (new Rect (s, 0, s, s), ReduceResultPass1);
+			GUI.DrawTexture (new Rect (s * 2, 0, s, s), ReduceResultPass2);
 		}
+	}
 
-		int r = 0;
-		int g = 0;
-		int b = 0;
-		for (int i = 0; i < blendedResult.Length; i++) {
-			r += blendedResult [i].r;
-			g += blendedResult [i].g;
-			b += blendedResult [i].b;
+	void OnDestroy () {
+		if (CompareResult != null) {
+			CompareResult.Release ();
 		}
-		r /= blendedResult.Length;
-		g /= blendedResult.Length;
-		b /= blendedResult.Length;
-		result.r = (float)r / 255;
-		result.g = (float)g / 255;
-		result.b = (float)b / 255;
-		combinedResult = ((float)result.r / 255 + (float)result.g / 255 + (float)result.b / 255) / 3;
-
-		yield break;
+		if (ReduceResultPass1 != null) {
+			ReduceResultPass1.Release ();
+		}
+		if (ReduceResultPass2 != null) {
+			ReduceResultPass2.Release ();
+		}
 	}
 }
