@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using NewtonVR;
+using System.Collections.Generic;
 
 public class SpellCaster : MonoBehaviour {
 	public bool Drawing = false;
@@ -15,13 +16,15 @@ public class SpellCaster : MonoBehaviour {
 	public Transform FingerTipPosTr;
 	public AnimationCurve ScaleUpCurve;
 	public AnimationCurve ScaleDownCurve;
+	public GlyphAnalyzer Analyzer;
 	RaycastHit hitInfo;
 	float growStartTime;
 	float shrinkStartTime;
 	Collider fingerCollider;
+	float lastPulseTime;
+	float pulseDuration = 0.025f;
 
 	void OnTriggerEnter (Collider other) {
-		Debug.Log ("Entered trigger: " + other.name);
 		if (other.CompareTag ("Fingertip")) {
 			fingerCollider = other;
 			Drawing = true;
@@ -29,7 +32,6 @@ public class SpellCaster : MonoBehaviour {
 	}
 
 	void OnTriggerExit (Collider other) {
-		Debug.Log ("Exited trigger: " + other.name);
 		if (other.CompareTag ("Fingertip")) {
 			fingerCollider = null;
 			Drawing = false;
@@ -45,7 +47,7 @@ public class SpellCaster : MonoBehaviour {
 			if (Time.time < shrinkStartTime + 3f) {
 				CanvasTr.localScale = Vector3.one * ScaleDownCurve.Evaluate (Time.time - shrinkStartTime);
 			} else {
-				CanvasTr.gameObject.SetActive (false);
+				//CanvasTr.gameObject.SetActive (false);
 			}
 			if (LeftHand.HoldButtonDown) {
 				CanvasTr.gameObject.SetActive (true);
@@ -61,8 +63,16 @@ public class SpellCaster : MonoBehaviour {
 			CanvasTr.localScale = Vector3.one * ScaleUpCurve.Evaluate (Time.time - growStartTime);
 			if (Drawing) {
 				FingerTipPosTr.position = fingerCollider.transform.position;
+				Vector3 localPos = FingerTipPosTr.localPosition;
+				localPos.z = 0f;
+				FingerTipPosTr.localPosition = localPos;
 				CurrentUVs.x = FingerTipPosTr.localPosition.x;
 				CurrentUVs.y = FingerTipPosTr.localPosition.y;
+
+				if (Time.time > lastPulseTime + pulseDuration) {
+					lastPulseTime = Time.time;
+					RightHand.Controller.TriggerHapticPulse (500, Valve.VR.EVRButtonId.k_EButton_SteamVR_Touchpad);
+				}
 			}
 			/*if (Physics.Raycast (
 				RightHand.transform.position,
@@ -76,13 +86,16 @@ public class SpellCaster : MonoBehaviour {
 			if (LeftHand.HoldButtonUp) {
 				shrinkStartTime = Time.time;
 				Mode = CasterMode.Casting;
+				StartCoroutine (Analyzer.CompareGlyph ());
 			}
 			break;
 
 		case CasterMode.Casting:
 			Drawing = false;
-			//CanvasTr.gameObject.SetActive (false);
-			Mode = CasterMode.Cooldown;
+			if (!Analyzer.Analyzing) {
+				//CanvasTr.gameObject.SetActive (false);
+				Mode = CasterMode.Cooldown;
+			}
 			break;
 
 		case CasterMode.Cooldown:

@@ -8,6 +8,7 @@ public class GlyphAnalyzer : MonoBehaviour {
 	}
 
 	public float Average;
+	public bool Analyzing;
 	public ComputeShader CompareShader;
 	public ComputeShader ReduceShader;
 	public RenderTexture CompareResult;
@@ -16,13 +17,9 @@ public class GlyphAnalyzer : MonoBehaviour {
 	public Texture2D GlyphTemplate;
 	public Texture2D GlyphAttempt;
 
-	void Start ( ) {
-		StartCoroutine (CompareGlyph ());
-	}
+	public IEnumerator CompareGlyph () {
 
-	IEnumerator CompareGlyph () {
-
-		yield return new WaitForSeconds (5f);
+		Analyzing = true;
 
 		CompareResult = new RenderTexture(GlyphAttempt.width, GlyphAttempt.height, 0, RenderTextureFormat.RFloat);
 		CompareResult.enableRandomWrite = true;
@@ -60,6 +57,8 @@ public class GlyphAnalyzer : MonoBehaviour {
 		ReduceShader.Dispatch (0, 32, 32, 1);
 
 		yield return null;
+
+		Analyzing = false;
 	}
 
 	void OnGUI()

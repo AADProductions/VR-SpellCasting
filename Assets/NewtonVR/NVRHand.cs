@@ -38,7 +38,7 @@ namespace NewtonVR
 
         private Dictionary<NVRInteractable, Dictionary<Collider, float>> CurrentlyHoveringOver;
 
-        private SteamVR_Controller.Device Controller;
+        public SteamVR_Controller.Device Controller;
 
 
         private NVRInteractable CurrentlyInteracting;
